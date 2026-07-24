@@ -52,7 +52,6 @@ export function usePolledResource<T>(
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey]);
 
   useEffect(() => {
