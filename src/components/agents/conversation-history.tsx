@@ -58,8 +58,8 @@ function groupByRecency(conversations: AgentConversationSummary[]) {
   return bands.filter((b) => b.items.length > 0);
 }
 
-// No delete action here — onecrawler-agents-backend only exposes GET /chats
-// and GET /chats/{id}, with no endpoint to remove a conversation.
+// No delete action here — onecrawler-backend only exposes GET /api/v1/chats
+// and GET /api/v1/chats/{id}, with no endpoint to remove a conversation.
 export function ConversationHistory({ conversations, activeId, onSelect, loading }: ConversationHistoryProps) {
   const groups = groupByRecency(conversations);
   const showSkeleton = loading && conversations.length === 0;

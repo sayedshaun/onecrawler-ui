@@ -238,10 +238,10 @@ export interface UsageStats {
   urlsScrapedThisMonth: number;
 }
 
-// Agent chat — mirrors onecrawler-agents-backend's streamed chat events.
+// Agent chat — mirrors onecrawler-backend's streamed chat events.
 export type AgentMessageRole = "user" | "assistant";
 
-// Mirrors onecrawler-agents-backend AgentSettingsOut/AgentSettingsIn (per-user
+// Mirrors onecrawler-backend AgentSettingsOut/AgentSettingsIn (per-user
 // agent config): which LLM provider/model powers the agent, and an optional
 // web-search provider (currently only Tavily) that backs its web_search tool.
 // Only `hasKey` is ever read back — the raw keys are write-only.
@@ -299,7 +299,7 @@ export interface AgentMessage {
   error?: string;
 }
 
-// Mirrors onecrawler-agents-backend's ConversationOut — a ChatGPT-style
+// Mirrors onecrawler-backend's ConversationOut — a ChatGPT-style
 // history entry. `id` is the conversation_id used as the chat's thread id.
 export interface AgentConversationSummary {
   id: string;

@@ -31,16 +31,7 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: env.API_PROXY_TARGET,
           changeOrigin: true,
-        },
-        // onecrawler-agents-backend is a separate service from onecrawler-backend,
-        // and mounts its own routes under /api (e.g. /api/chat, /api/settings/llm) —
-        // strip our /agents-api prefix and re-add /api so the two backends' /api
-        // routes don't collide on this side.
-        "/agents-api": {
-          target: env.AGENTS_API_PROXY_TARGET,
-          changeOrigin: true,
           ws: true,
-          rewrite: (path) => path.replace(/^\/agents-api/, "/api"),
         },
       },
     },

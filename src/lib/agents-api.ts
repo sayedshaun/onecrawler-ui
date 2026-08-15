@@ -9,11 +9,9 @@ import type {
 import { generateId, stringifyJsonForDisplay } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
-// onecrawler-agents-backend is a separate service from onecrawler-backend,
-// reached through its own dev-server / Caddy proxy entry (see vite.config.ts
-// and Caddyfile) rather than the shared /api target. Both rewrite this prefix
-// back to the backend's own /api/* routes.
-const AGENTS_API_BASE = "/agents-api";
+// The agent's chat/settings endpoints live on the same onecrawler-backend
+// origin as everything else in src/lib/*-api.ts, under /api/v1.
+const AGENTS_API_BASE = "/api/v1";
 
 export class AgentStreamError extends Error {}
 
@@ -89,11 +87,11 @@ interface ChatToolMessage {
   name?: string;
 }
 
-// Maps one SSE frame from POST /agents-api/chat/stream to zero or more UI
+// Maps one SSE frame from POST /api/v1/chat/stream to zero or more UI
 // events. The backend emits three named events (token, done, error) plus a
 // fourth, unnamed one for tool-call/tool-result updates (one AIMessage can
-// carry several tool_calls at once) — see onecrawler-agents-backend's
-// src/api/chat/router.py for the exact frame shapes this mirrors. Plain
+// carry several tool_calls at once) — see onecrawler-backend's
+// src/api/v1/agent/router.py for the exact frame shapes this mirrors. Plain
 // assistant text never appears in the unnamed event — the backend already
 // filters it out there since it's covered by `token` instead.
 function mapFrame(eventType: string, payload: unknown): AgentStreamEvent[] {
@@ -144,7 +142,7 @@ function mapFrame(eventType: string, payload: unknown): AgentStreamEvent[] {
   return [];
 }
 
-/** Streams one chat turn from POST /agents-api/chat/stream (SSE). Requires the
+/** Streams one chat turn from POST /api/v1/chat/stream (SSE). Requires the
  * user to have already saved an LLM provider/model/key via the agent settings
  * endpoints below — the backend 4xxs otherwise. */
 export async function streamAgentChat({
@@ -248,8 +246,12 @@ interface ConversationApi {
   updated_at: string;
 }
 
+// The backend stores each turn under the LangChain message kind that
+// produced it ("human" / "ai" — see _record_turn in
+// src/api/v1/agent/router.py), not the "user" / "assistant" naming this UI
+// uses for its own locally-built turns — translated below.
 interface ChatMessageApi {
-  role: "user" | "assistant";
+  role: "human" | "ai";
   content: string;
   created_at: string;
 }
@@ -268,7 +270,7 @@ function conversationFromApi(raw: ConversationApi): AgentConversationSummary {
 function messageFromApi(raw: ChatMessageApi): AgentMessage {
   return {
     id: generateId(),
-    role: raw.role,
+    role: raw.role === "human" ? "user" : "assistant",
     parts: [{ kind: "text", id: generateId(), text: raw.content }],
     createdAt: Date.parse(raw.created_at),
   };

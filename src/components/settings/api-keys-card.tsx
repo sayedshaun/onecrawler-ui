@@ -189,8 +189,8 @@ function ScraperLLMSection() {
 
 /** The agent's own brain config — a separate LLM provider/key from the
  * Scraper LLM above, plus an optional web-search key that backs its
- * web_search tool. Mirrors onecrawler-agents-backend's nested
- * `/api/settings/agent` schema ({ llm, search }, each with its own has_key). */
+ * web_search tool. Mirrors onecrawler-backend's nested
+ * `/api/v1/settings/agent` schema ({ llm, search }, each with its own has_key). */
 function AgentLLMSection() {
   const { data: settings, error: loadError, refetch } = usePolledResource(getAgentSettings, {
     cacheKey: "agents:settings",

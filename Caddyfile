@@ -3,15 +3,7 @@
 	encode gzip
 
 	handle /api/* {
-		reverse_proxy {$API_PROXY_TARGET}
-	}
-
-	# onecrawler-agents-backend mounts its own routes under /api (e.g. /api/chat,
-	# /api/settings/llm) — strip our /agents-api prefix and re-add /api so this
-	# UI's own /api (onecrawler-backend) and /agents-api don't collide.
-	handle_path /agents-api/* {
-		rewrite * /api{uri}
-		reverse_proxy {$AGENTS_API_PROXY_TARGET} {
+		reverse_proxy {$API_PROXY_TARGET} {
 			flush_interval -1
 		}
 	}
