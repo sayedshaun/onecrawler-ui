@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for AI coding agents (Cursor, Copilot, Codex, etc.) working in this repository. See [CLAUDE.md](./CLAUDE.md) for the full architecture writeup — this file summarizes the same conventions in the generic `agents.md` format.
+Instructions for AI coding agents (Claude Code, Cursor, Copilot, Codex, etc.) working in this repository.
 
 ## Setup & commands
 
@@ -24,11 +24,46 @@ This UI has no backend of its own; it's a client for a sibling FastAPI project (
 - Live views (Crawl Detail, History, Dashboard) poll rather than use websockets, via `src/hooks/use-polled-resource.ts`. Reuse it instead of hand-rolled polling.
 - Path alias `@/*` → `src/*`.
 
+### Structure
+
+```
+src/
+  components/
+    ui/            shadcn-style primitives (button, card, dialog, select, ...)
+    layout/        app shell, sidebar, top bar, theme toggle
+    auth/          shared login/signup layout
+    routing/       route guards (ProtectedRoute)
+    crawl-form/    New Crawl / Settings page form sections
+    crawl-detail/  live progress, logs, results, discovered URLs
+    dashboard/     dashboard-only widgets
+    agents/        agent chat UI — messages, composer, trace steps, conversation history
+    templates/     crawl template cards and pickers
+    settings/      account/settings page pieces
+    tutorial/      in-app guided onboarding
+    shared/        cross-page widgets (status badge, crawls table, result drawer, empty state, pagination)
+  pages/           one file per route
+  hooks/           use-polled-resource, use-debounced-value, use-media-query
+  store/           zustand stores (auth session, persisted crawl-form defaults)
+  lib/
+    types.ts         CrawlSettings etc. — mirrors onecrawler's Python Settings shape
+    api.ts           apiFetch — the shared authenticated fetch wrapper
+    crawls-api.ts    crawl/data/discovered-URL/log endpoints
+    agents-api.ts    agent chat streaming + conversation endpoints
+    templates-api.ts crawl template CRUD endpoints
+    settings-api.ts  account/settings endpoints
+    api-mapper.ts    converts UI state to the backend's snake_case payload
+  providers/       theme provider (light/dark/system)
+```
+
 ## Conventions
 
 - Follow the existing ESLint config (`eslint.config.js`); fix lint warnings rather than suppressing them.
 - New animated UI should go through `framer-motion` (already wrapped in `MotionConfig reducedMotion="user"` at the root) so reduced-motion preferences are respected automatically.
 - Don't add a test suite, CI workflow, or new tooling unless explicitly asked.
+
+## Keep the README current
+
+`README.md` documents the feature list ("What's here"), project structure, and self-hosting notes. When a change adds/renames/removes a page, route, top-level `src/` directory, or `src/lib/*-api.ts` module — or changes self-hosting-relevant files (`Dockerfile`, `docker-compose*.yml`, `Caddyfile`, `.env.example`) — update the matching part of `README.md` in the same change. Don't let it drift silently.
 
 ## Commit messages
 
