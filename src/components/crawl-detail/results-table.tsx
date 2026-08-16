@@ -12,7 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
-import { ResultDetailDrawer } from "@/components/shared/result-detail-drawer";
+import { RowCardButton } from "@/components/shared/row-card";
+import { ResultDetailDrawer } from "@/components/shared/result-detail-drawer-lazy";
 import { downloadDataItem } from "@/lib/crawls-api";
 import { truncate } from "@/lib/utils";
 import type { CrawlResultItem } from "@/lib/types";
@@ -47,12 +48,7 @@ export function ResultsTable({ results }: { results: CrawlResultItem[] }) {
       {/* Below sm: stacked cards instead of a cramped 4-column table. */}
       <div className="space-y-2 sm:hidden">
         {results.map((result) => (
-          <button
-            key={result.id}
-            type="button"
-            onClick={() => setSelected(result)}
-            className="block w-full rounded-lg border border-border p-3 text-left transition-colors hover:bg-accent/50"
-          >
+          <RowCardButton key={result.id} onClick={() => setSelected(result)}>
             <p className="truncate font-medium text-foreground">{truncate(result.title, 40)}</p>
             <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">{result.url}</p>
             <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
@@ -61,7 +57,7 @@ export function ResultsTable({ results }: { results: CrawlResultItem[] }) {
               </Badge>
               <span>{result.wordCount.toLocaleString()} words</span>
             </div>
-          </button>
+          </RowCardButton>
         ))}
       </div>
 

@@ -26,7 +26,7 @@ export function PatternListInput({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

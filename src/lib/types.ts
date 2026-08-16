@@ -2,11 +2,12 @@
 // so the future FastAPI backend can accept this payload close to as-is.
 
 export type LinkExtractionStrategy = "shallow" | "deep";
-export type ScrapingStrategy = "heuristic" | "genai";
+export type ScrapingStrategy = "heuristic" | "genai" | "markdownify";
 export type ScrapingOutputFormat = "markdown" | "json" | "xml" | "xmltei";
 export type ProxyRotationMethod = "round_robin" | "random";
 export type GenAIProvider = "openai" | "google" | "ollama";
 export type CrawlMode = "sitemap" | "link_extraction" | "crawler" | "scraper";
+export type ExportArchiveFormat = "zip" | "ndjson";
 
 export interface ProxySettings {
   server: string;
@@ -132,6 +133,11 @@ export interface ThroughputPoint {
   pagesPerSec: number;
 }
 
+export interface DiscoveryPoint {
+  t: number;
+  count: number;
+}
+
 // Mirrors backend CrawlJobSummaryOut (src/api/v1/crawler/*/schema.py)
 export interface CrawlSummary {
   id: string;
@@ -155,6 +161,7 @@ export interface CrawlSummary {
 export interface CrawlDetail extends CrawlSummary {
   settings: Record<string, unknown>;
   throughputHistory: ThroughputPoint[];
+  discoveryHistory: DiscoveryPoint[];
 }
 
 export interface PaginatedResponse<T> {
@@ -211,4 +218,91 @@ export interface ApiKeyStatus {
   provider: GenAIProvider;
   hasKey: boolean;
   updatedAt: number | null;
+}
+
+// Mirrors backend SessionOut.
+export interface UserSession {
+  id: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
+// Mirrors backend UsageOut.
+export interface UsageStats {
+  totalJobs: number;
+  jobCounts: Record<CrawlStatus, number>;
+  urlsDiscovered: number;
+  urlsScraped: number;
+  urlsFailed: number;
+  jobsThisMonth: number;
+  urlsScrapedThisMonth: number;
+}
+
+// Agent chat — mirrors onecrawler-backend's streamed chat events.
+export type AgentMessageRole = "user" | "assistant";
+
+// Mirrors onecrawler-backend AgentSettingsOut/AgentSettingsIn (per-user
+// agent config): which LLM provider/model powers the agent, and an optional
+// web-search provider (currently only Tavily) that backs its web_search tool.
+// Only `hasKey` is ever read back — the raw keys are write-only.
+export type AgentLLMProvider = "openai" | "anthropic" | "google" | "openrouter";
+
+export interface AgentLLMConfig {
+  provider: AgentLLMProvider | null;
+  model: string | null;
+  hasKey: boolean;
+}
+
+export interface AgentSearchConfig {
+  provider: string | null;
+  hasKey: boolean;
+}
+
+export interface AgentSettings {
+  llm: AgentLLMConfig;
+  search: AgentSearchConfig;
+  updatedAt: string | null;
+}
+
+// A step in the agent's visible trace mid-turn — a tool it decided to call
+// ("call") or that tool's outcome ("result"). `id` is the backend's tool-call
+// id, shared by a call and its eventual result, so the UI can update one
+// in-place chip (spinner -> checkmark) instead of rendering two separate
+// entries. `write_todos` calls/results are the agent's own planning tool and
+// are flagged via `isPlanning` so the UI can render them as "planning" rather
+// than a generic "action". `jobId` links a result back into the existing
+// crawl detail route when one is found in it.
+export type AgentTraceStepKind = "call" | "result";
+
+export interface AgentTraceStep {
+  id: string;
+  kind: AgentTraceStepKind;
+  toolName: string;
+  isPlanning: boolean;
+  detail?: string;
+  jobId?: string;
+}
+
+// A message renders as an ordered sequence of parts — streamed text
+// interleaved with trace steps in the exact order the agent produced them
+// (a tool call can happen mid-reply, before the model resumes talking).
+export type AgentMessagePart =
+  | { kind: "text"; id: string; text: string }
+  | { kind: "step"; id: string; step: AgentTraceStep };
+
+export interface AgentMessage {
+  id: string;
+  role: AgentMessageRole;
+  parts: AgentMessagePart[];
+  createdAt: number;
+  pending?: boolean;
+  error?: string;
+}
+
+// Mirrors onecrawler-backend's ConversationOut — a ChatGPT-style
+// history entry. `id` is the conversation_id used as the chat's thread id.
+export interface AgentConversationSummary {
+  id: string;
+  title: string;
+  updatedAt: number;
 }

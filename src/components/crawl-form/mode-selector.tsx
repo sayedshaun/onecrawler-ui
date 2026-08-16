@@ -52,7 +52,7 @@ export function ModeSelector({
             type="button"
             onClick={() => onChange(mode.value)}
             className={cn(
-              "flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all",
+              "flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all duration-150 ease-out",
               active
                 ? "border-primary bg-primary/5 ring-1 ring-primary"
                 : "border-border hover:border-primary/40 hover:bg-accent/50",

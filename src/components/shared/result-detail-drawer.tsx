@@ -5,16 +5,17 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { JsonCodeViewer } from "@/components/shared/json-code-viewer";
 import { ApiError } from "@/lib/api";
 import { downloadDataItem, getDataItem } from "@/lib/crawls-api";
 import { cn, formatNumber } from "@/lib/utils";
@@ -92,7 +93,7 @@ function ImageThumb({ src, size = "h-20 w-20" }: { src: string; size?: string })
         src={src}
         alt=""
         loading="lazy"
-        className={`${size} rounded-md border border-border object-cover transition-opacity hover:opacity-90`}
+        className={`${size} rounded-md border border-border object-cover transition-opacity duration-150 ease-out hover:opacity-90`}
       />
     </a>
   );
@@ -264,9 +265,23 @@ function ContentBody({ detail }: { detail: DataItemDetail }) {
     return <p className="text-sm text-muted-foreground">This result has no content.</p>;
   }
 
-  // JSON-mode scrapes store the full extracted field set as `content` — show it structured.
+  // JSON-mode scrapes store the full extracted field set as `content`. Default to
+  // the raw tree (what the data actually is) with the humanized layout as a toggle.
   if (detail.format === "json") {
-    return <StructuredDataView data={content} />;
+    return (
+      <Tabs defaultValue="raw">
+        <TabsList>
+          <TabsTrigger value="raw">Raw JSON</TabsTrigger>
+          <TabsTrigger value="structured">Structured</TabsTrigger>
+        </TabsList>
+        <TabsContent value="raw">
+          <JsonCodeViewer data={content} />
+        </TabsContent>
+        <TabsContent value="structured">
+          <StructuredDataView data={content} />
+        </TabsContent>
+      </Tabs>
+    );
   }
 
   // markdown/xml/xmltei scrapes store their raw text under `text` (or `raw_text`).
@@ -278,7 +293,7 @@ function ContentBody({ detail }: { detail: DataItemDetail }) {
 
   if (detail.format === "markdown") {
     return (
-      <div className="rounded-lg border border-border bg-card/50 p-5">
+      <div className="border border-border bg-muted/40 rounded-lg p-5">
         <div className="prose prose-sm max-w-none sm:prose-base">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
         </div>
@@ -294,7 +309,7 @@ function RawContentBlock({ content }: { content: string }) {
   const isLong = content.length > 800;
 
   return (
-    <div className="rounded-lg border border-border bg-muted/40">
+    <div className="border border-border bg-muted/40 rounded-lg">
       <pre
         className={cn(
           "whitespace-pre-wrap break-words p-4 font-mono text-xs leading-relaxed text-foreground/90",
@@ -364,14 +379,14 @@ export function ResultDetailDrawer({
   }
 
   return (
-    <Sheet open={!!result} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-4 sm:max-w-2xl lg:max-w-3xl">
+    <Dialog open={!!result} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[75vh] flex-col gap-4 overflow-y-auto sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
         {result && (
           <>
-            <SheetHeader>
-              <SheetTitle className="pr-6">{result.title || "(untitled)"}</SheetTitle>
-              <SheetDescription className="break-all font-mono text-xs">{result.url}</SheetDescription>
-            </SheetHeader>
+            <DialogHeader>
+              <DialogTitle className="pr-6">{result.title || "(untitled)"}</DialogTitle>
+              <DialogDescription className="break-all font-mono text-xs">{result.url}</DialogDescription>
+            </DialogHeader>
 
             <Button
               variant="outline"
@@ -414,7 +429,7 @@ export function ResultDetailDrawer({
 
             <Separator />
 
-            <ScrollArea className="min-h-0 flex-1">
+            <div className="min-h-0">
               {loading && (
                 <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading content…
@@ -422,10 +437,10 @@ export function ResultDetailDrawer({
               )}
               {error && <p className="text-sm text-destructive">{error}</p>}
               {detail && !loading && <ContentBody detail={detail} />}
-            </ScrollArea>
+            </div>
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,6 +1,6 @@
 import { Field, FieldRow } from "@/components/crawl-form/field";
 import { PatternListInput } from "@/components/crawl-form/pattern-list-input";
-import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import {
   Select,
   SelectContent,
@@ -27,11 +27,11 @@ export function LinkExtractionSection({
 }) {
   const limitField = (
     <Field label={limitLabel} description={limitDescription}>
-      <Input
-        type="number"
+      <NumericInput
         min={1}
         value={settings.linkExtractionLimit}
-        onChange={(e) => onChange({ linkExtractionLimit: Number(e.target.value) || 0 })}
+        emptyValue={0}
+        onValueChange={(linkExtractionLimit) => onChange({ linkExtractionLimit })}
       />
     </Field>
   );
@@ -66,20 +66,20 @@ export function LinkExtractionSection({
 
       <Field
         label="Include patterns"
-        description={'Allow-list wildcard paths, e.g. "/blog/*". Leave empty to include everything.'}
+        description={'Allow-list paths — a plain keyword like "blog" matches any path containing it. Wildcards like "/blog/*" still work. Leave empty to include everything.'}
       >
         <PatternListInput
           values={settings.includeLinkPatterns}
           onChange={(next) => onChange({ includeLinkPatterns: next })}
-          placeholder="/news/*"
+          placeholder="news"
         />
       </Field>
 
-      <Field label="Exclude patterns" description={'Deny-list wildcard paths, e.g. "/admin/*".'}>
+      <Field label="Exclude patterns" description={'Deny-list paths — a plain keyword like "admin" matches any path containing it. Wildcards like "/admin/*" still work.'}>
         <PatternListInput
           values={settings.excludeLinkPatterns}
           onChange={(next) => onChange({ excludeLinkPatterns: next })}
-          placeholder="/admin/*"
+          placeholder="admin"
         />
       </Field>
     </div>

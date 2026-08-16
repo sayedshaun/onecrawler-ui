@@ -20,6 +20,15 @@ function getSystemTheme(): "light" | "dark" {
     : "light";
 }
 
+// Point the mobile browser chrome at the actual page background so it doesn't
+// flash / re-tint as pages sample different colors during navigation.
+function syncThemeColorMeta() {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!meta) return;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
+  if (bg) meta.setAttribute("content", `hsl(${bg})`);
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -35,6 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const next = theme === "system" ? getSystemTheme() : theme;
     root.classList.toggle("dark", next === "dark");
     setResolvedTheme(next);
+    syncThemeColorMeta();
 
     if (theme !== "system") return;
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
@@ -42,6 +52,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const sys = getSystemTheme();
       root.classList.toggle("dark", sys === "dark");
       setResolvedTheme(sys);
+      syncThemeColorMeta();
     };
     mql.addEventListener("change", listener);
     return () => mql.removeEventListener("change", listener);

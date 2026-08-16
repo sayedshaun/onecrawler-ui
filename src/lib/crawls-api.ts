@@ -8,6 +8,7 @@ import type {
   DataItem,
   DataItemDetail,
   DiscoveredUrl,
+  ExportArchiveFormat,
   LogLine,
   PaginatedResponse,
 } from "@/lib/types";
@@ -54,6 +55,10 @@ export function listCrawlLogs(id: string, params: PageParams = {}): Promise<Pagi
 
 export function cancelCrawl(id: string): Promise<CrawlSummary> {
   return apiFetch(`/api/v1/crawls/${id}/cancel`, { method: "POST" });
+}
+
+export function retryCrawl(id: string): Promise<CrawlSummary> {
+  return apiFetch(`/api/v1/crawls/${id}/retry`, { method: "POST" });
 }
 
 export function downloadCrawlResults(id: string): Promise<void> {
@@ -113,4 +118,27 @@ export function getDataItem(id: string): Promise<DataItemDetail> {
 
 export function downloadDataItem(id: string): Promise<void> {
   return apiDownload(`/api/v1/data/${id}/download`, `result-${id}.json`);
+}
+
+export interface DataExportRequest {
+  ids?: string[];
+  jobId?: string;
+  format?: string;
+  q?: string;
+  archiveFormat: ExportArchiveFormat;
+}
+
+export function exportData(params: DataExportRequest): Promise<void> {
+  const { ids, jobId, format, q, archiveFormat } = params;
+  const fallback = `data-export.${archiveFormat === "zip" ? "zip" : "ndjson"}`;
+  return apiDownload("/api/v1/data/export", fallback, {
+    method: "POST",
+    body: JSON.stringify({
+      ids: ids?.length ? ids : undefined,
+      job_id: jobId || undefined,
+      format: format || undefined,
+      q: q || undefined,
+      archive_format: archiveFormat,
+    }),
+  });
 }

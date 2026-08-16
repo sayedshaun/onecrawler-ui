@@ -3,6 +3,7 @@ import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import globals from "globals";
 
 export default [
   { ignores: ["dist"] },
@@ -15,6 +16,10 @@ export default [
         ecmaVersion: 2022,
         sourceType: "module",
         ecmaFeatures: { jsx: true },
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
       },
     },
     plugins: {
@@ -31,6 +36,13 @@ export default [
       ],
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "no-unused-vars": "off",
+      "no-undef": "off",
+    },
+  },
+  {
+    files: ["vite.config.ts"],
+    languageOptions: {
+      globals: { ...globals.node },
     },
   },
 ];

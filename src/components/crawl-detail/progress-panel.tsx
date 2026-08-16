@@ -1,10 +1,11 @@
-import { Ban, CheckCircle2, Clock3, Download, Gauge, Loader2, Radar, RotateCcw, XCircle } from "lucide-react";
+import { Ban, CheckCircle2, Clock3, Download, Gauge, Loader2, RotateCcw, XCircle } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ThroughputChart } from "@/components/crawl-detail/throughput-chart";
+import { DiscoveryChart } from "@/components/crawl-detail/discovery-chart";
 import { formatDuration, formatNumber } from "@/lib/utils";
 import type { CrawlDetail } from "@/lib/types";
 
@@ -33,7 +34,6 @@ export function ProgressPanel({
   const pct = job.urlLimit > 0 ? Math.min(100, Math.round((processed / job.urlLimit) * 100)) : 0;
   const elapsed = ((job.finishedAt ?? Date.now()) - (job.startedAt ?? job.createdAt)) / 1000;
   const currentRate = job.throughputHistory.at(-1)?.pagesPerSec ?? 0;
-  const discoveryRate = elapsed > 0 ? job.urlsDiscovered / elapsed : 0;
 
   const metrics = [
     { icon: Gauge, label: "Discovered", value: formatNumber(job.urlsDiscovered) },
@@ -81,7 +81,7 @@ export function ProgressPanel({
                 <Ban className="h-3.5 w-3.5" /> Cancel
               </Button>
             )}
-            {(job.status === "failed" || job.status === "cancelled" || job.status === "completed") && (
+            {(job.status === "failed" || job.status === "cancelled") && (
               <Button variant="outline" size="sm" onClick={onRetry}>
                 <RotateCcw className="h-3.5 w-3.5" /> Run again
               </Button>
@@ -121,17 +121,7 @@ export function ProgressPanel({
         </div>
 
         {discoveryOnly ? (
-          <div className="flex h-28 flex-col items-center justify-center gap-1.5 rounded-lg border border-border text-center">
-            <Radar className={`h-4 w-4 text-muted-foreground ${job.status === "running" ? "animate-pulse" : ""}`} />
-            <p className="text-lg font-semibold tabular-nums text-foreground">
-              {formatNumber(job.urlsDiscovered)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {job.status === "running"
-                ? `URLs discovered · ~${discoveryRate.toFixed(1)}/s`
-                : "URLs discovered"}
-            </p>
-          </div>
+          <DiscoveryChart history={job.discoveryHistory} />
         ) : (
           <ThroughputChart history={job.throughputHistory} />
         )}

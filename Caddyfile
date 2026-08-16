@@ -3,7 +3,9 @@
 	encode gzip
 
 	handle /api/* {
-		reverse_proxy {$API_PROXY_TARGET}
+		reverse_proxy {$API_PROXY_TARGET} {
+			flush_interval -1
+		}
 	}
 
 	handle {

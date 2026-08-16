@@ -1,5 +1,6 @@
 import { Field, FieldRow, SwitchField } from "@/components/crawl-form/field";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import {
   Select,
   SelectContent,
@@ -35,17 +36,17 @@ export function BrowserSection({
     <div className="space-y-5">
       <FieldRow>
         <Field label="Viewport width">
-          <Input
-            type="number"
+          <NumericInput
             value={browser.viewport.width}
-            onChange={(e) => updateBrowser({ viewport: { ...browser.viewport, width: Number(e.target.value) || 0 } })}
+            emptyValue={0}
+            onValueChange={(width) => updateBrowser({ viewport: { ...browser.viewport, width } })}
           />
         </Field>
         <Field label="Viewport height">
-          <Input
-            type="number"
+          <NumericInput
             value={browser.viewport.height}
-            onChange={(e) => updateBrowser({ viewport: { ...browser.viewport, height: Number(e.target.value) || 0 } })}
+            emptyValue={0}
+            onValueChange={(height) => updateBrowser({ viewport: { ...browser.viewport, height } })}
           />
         </Field>
       </FieldRow>
@@ -85,21 +86,14 @@ export function BrowserSection({
           </Select>
         </Field>
         <Field label="Navigation timeout (ms)">
-          <Input
-            type="number"
+          <NumericInput
             min={0}
             value={browser.timeout}
-            onChange={(e) => updateBrowser({ timeout: Number(e.target.value) || 0 })}
+            emptyValue={0}
+            onValueChange={(timeout) => updateBrowser({ timeout })}
           />
         </Field>
       </FieldRow>
-
-      <SwitchField
-        label="Headless"
-        description="Run the browser without a visible window."
-        checked={browser.headless}
-        onCheckedChange={(checked) => updateBrowser({ headless: checked })}
-      />
 
       {showHumanBehavior && (
         <SwitchField
@@ -113,45 +107,45 @@ export function BrowserSection({
       {showHumanBehavior && settings.enableHumanBehaviors && (
         <div className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2">
           <Field label="Min delay (s)">
-            <Input
-              type="number"
+            <NumericInput
               step="0.1"
               min={0}
               value={human.minDelay}
-              onChange={(e) => updateHuman({ minDelay: Number(e.target.value) || 0 })}
+              emptyValue={0}
+              onValueChange={(minDelay) => updateHuman({ minDelay })}
             />
           </Field>
           <Field label="Max delay (s)">
-            <Input
-              type="number"
+            <NumericInput
               step="0.1"
               min={0}
               value={human.maxDelay}
-              onChange={(e) => updateHuman({ maxDelay: Number(e.target.value) || 0 })}
+              emptyValue={0}
+              onValueChange={(maxDelay) => updateHuman({ maxDelay })}
             />
           </Field>
           <Field label="Max scrolls">
-            <Input
-              type="number"
+            <NumericInput
               min={0}
               value={human.maxScrolls}
-              onChange={(e) => updateHuman({ maxScrolls: Number(e.target.value) || 0 })}
+              emptyValue={0}
+              onValueChange={(maxScrolls) => updateHuman({ maxScrolls })}
             />
           </Field>
           <Field label="Mouse moves (min–max)">
             <div className="flex items-center gap-2">
-              <Input
-                type="number"
+              <NumericInput
                 min={0}
                 value={human.minMouseMoves}
-                onChange={(e) => updateHuman({ minMouseMoves: Number(e.target.value) || 0 })}
+                emptyValue={0}
+                onValueChange={(minMouseMoves) => updateHuman({ minMouseMoves })}
               />
               <span className="text-muted-foreground">–</span>
-              <Input
-                type="number"
+              <NumericInput
                 min={0}
                 value={human.maxMouseMoves}
-                onChange={(e) => updateHuman({ maxMouseMoves: Number(e.target.value) || 0 })}
+                emptyValue={0}
+                onValueChange={(maxMouseMoves) => updateHuman({ maxMouseMoves })}
               />
             </div>
           </Field>

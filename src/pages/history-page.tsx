@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CrawlsTable } from "@/components/shared/crawls-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePolledResource } from "@/hooks/use-polled-resource";
 import { listCrawls } from "@/lib/crawls-api";
 import type { CrawlStatus } from "@/lib/types";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 const FILTERS: { value: CrawlStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -25,22 +27,27 @@ const FILTERS: { value: CrawlStatus | "all"; label: string }[] = [
 
 export default function HistoryPage() {
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 300);
   const [status, setStatus] = useState<CrawlStatus | "all">("all");
   const [page, setPage] = useState(0);
 
   useEffect(() => {
     setPage(0);
-  }, [query, status]);
+  }, [debouncedQuery, status]);
 
   const { data, loading, error } = usePolledResource(
     () =>
       listCrawls({
-        q: query.trim() || undefined,
+        q: debouncedQuery.trim() || undefined,
         status: status === "all" ? undefined : status,
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
       }),
-    { intervalMs: 4000, deps: [query, status, page] },
+    {
+      intervalMs: 4000,
+      deps: [debouncedQuery, status, page],
+      cacheKey: `history:${status}:${debouncedQuery.trim()}:${page}`,
+    },
   );
 
   const jobs = data?.items ?? [];
@@ -48,6 +55,16 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-4">
+      <PageHeader
+        icon={HistoryIcon}
+        title="Crawl History"
+        description="Every crawl you've run, with live status."
+        actions={
+          <Button asChild size="sm">
+            <Link to="/dashboard/crawls/new">Start a new crawl</Link>
+          </Button>
+        }
+      />
       {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
       <Card>
         <CardContent className="space-y-4 p-5">

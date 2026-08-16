@@ -55,7 +55,7 @@ export function ProxySection({
       ) : (
         <div className="space-y-2">
           {settings.proxies.map((proxy, i) => (
-            <div key={i} className="grid grid-cols-1 gap-2 rounded-md border border-border p-3 sm:grid-cols-[2fr_1fr_1fr_auto]">
+            <div key={i} className="grid grid-cols-1 items-center gap-2 rounded-md border border-border p-3 sm:grid-cols-[2fr_1fr_1fr_auto]">
               <Input
                 value={proxy.server}
                 onChange={(e) => updateProxy(i, { server: e.target.value })}

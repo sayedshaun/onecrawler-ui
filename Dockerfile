@@ -26,6 +26,4 @@ FROM caddy:2-alpine AS prod
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/dist /usr/share/caddy
 
-ENV API_PROXY_TARGET=http://localhost:8000
-
 EXPOSE 80

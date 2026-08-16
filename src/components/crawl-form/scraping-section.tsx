@@ -1,6 +1,6 @@
 import { Field, FieldRow } from "@/components/crawl-form/field";
 import { GenAISection } from "@/components/crawl-form/genai-section";
-import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import {
   Select,
   SelectContent,
@@ -46,7 +46,7 @@ export function ScrapingSection({
     <div className="space-y-5">
       {showExtraction ? (
         <FieldRow>
-          <Field label="Extraction strategy" description="Heuristic is fast and deterministic; GenAI produces typed output.">
+          <Field label="Extraction strategy" description="Heuristic is fast and deterministic; GenAI produces typed output; Markdownify converts the whole page to Markdown.">
             <Select value={settings.scrapingStrategy} onValueChange={(v) => setStrategy(v as CrawlSettings["scrapingStrategy"])}>
               <SelectTrigger>
                 <SelectValue />
@@ -54,6 +54,7 @@ export function ScrapingSection({
               <SelectContent>
                 <SelectItem value="heuristic">Heuristic</SelectItem>
                 <SelectItem value="genai">GenAI</SelectItem>
+                <SelectItem value="markdownify">Markdownify</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -88,38 +89,38 @@ export function ScrapingSection({
 
       <FieldRow>
         <Field label="Concurrency" description="Number of async workers.">
-          <Input
-            type="number"
+          <NumericInput
             min={1}
             value={settings.concurrency}
-            onChange={(e) => onChange({ concurrency: Number(e.target.value) || 1 })}
+            emptyValue={1}
+            onValueChange={(concurrency) => onChange({ concurrency })}
           />
         </Field>
         <Field label="Request timeout (s)">
-          <Input
-            type="number"
+          <NumericInput
             min={1}
             value={settings.requestTimeout}
-            onChange={(e) => onChange({ requestTimeout: Number(e.target.value) || 1 })}
+            emptyValue={1}
+            onValueChange={(requestTimeout) => onChange({ requestTimeout })}
           />
         </Field>
       </FieldRow>
 
       <FieldRow>
         <Field label="Max retries">
-          <Input
-            type="number"
+          <NumericInput
             min={0}
             value={settings.maxRetries}
-            onChange={(e) => onChange({ maxRetries: Number(e.target.value) || 0 })}
+            emptyValue={0}
+            onValueChange={(maxRetries) => onChange({ maxRetries })}
           />
         </Field>
         <Field label="Retry delay (s)">
-          <Input
-            type="number"
+          <NumericInput
             min={0}
             value={settings.retryDelay}
-            onChange={(e) => onChange({ retryDelay: Number(e.target.value) || 0 })}
+            emptyValue={0}
+            onValueChange={(retryDelay) => onChange({ retryDelay })}
           />
         </Field>
       </FieldRow>

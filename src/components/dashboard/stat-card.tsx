@@ -16,10 +16,10 @@ interface StatCardProps {
 export function StatCard({ label, value, hint, icon: Icon, trend, tone = "default" }: StatCardProps) {
   const toneClass =
     tone === "success"
-      ? "text-success"
+      ? "bg-success/10 text-success"
       : tone === "warning"
-        ? "text-warning"
-        : "text-primary";
+        ? "bg-warning/10 text-warning"
+        : "bg-primary/10 text-primary";
 
   const chartData = trend?.map((v, i) => ({ i, v }));
 
@@ -36,7 +36,7 @@ export function StatCard({ label, value, hint, icon: Icon, trend, tone = "defaul
             </p>
             {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
           </div>
-          <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg bg-muted", toneClass)}>
+          <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", toneClass)}>
             <Icon className="h-4 w-4" />
           </div>
         </div>

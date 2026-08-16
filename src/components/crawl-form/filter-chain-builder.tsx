@@ -1,13 +1,13 @@
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { uid } from "@/lib/id";
 import type { FilterGroup, FilterKind, FilterNode } from "@/lib/types";
@@ -35,7 +35,7 @@ function FilterParamInputs({
   switch (filter.kind) {
     case "by_date":
       return (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Input type="date" value={filter.params.start} onChange={(e) => set("start")(e.target.value)} />
           <Input type="date" value={filter.params.end} onChange={(e) => set("end")(e.target.value)} />
         </div>
@@ -119,20 +119,20 @@ export function FilterChainBuilder({
           </Tabs>
         </div>
 
-        <Select onValueChange={(v) => addFilter(v as FilterKind)}>
-          <SelectTrigger className="w-44">
-            <span className="flex items-center gap-1.5 text-sm">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="gap-1.5">
               <Plus className="h-3.5 w-3.5" /> Add filter
-            </span>
-          </SelectTrigger>
-          <SelectContent>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
             {(Object.keys(FILTER_META) as FilterKind[]).map((kind) => (
-              <SelectItem key={kind} value={kind}>
+              <DropdownMenuItem key={kind} onClick={() => addFilter(kind)}>
                 {FILTER_META[kind].label}
-              </SelectItem>
+              </DropdownMenuItem>
             ))}
-          </SelectContent>
-        </Select>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {group.filters.length === 0 ? (
@@ -149,7 +149,7 @@ export function FilterChainBuilder({
                   {group.mode}
                 </div>
               )}
-              <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-3">
+              <div className="border border-border bg-muted/40 flex items-start gap-3 rounded-lg p-3">
                 <span className="mt-1.5 shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
                   {FILTER_META[filter.kind].label}
                 </span>

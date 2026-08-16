@@ -16,7 +16,7 @@ import type { GenAISchemaField, GenerativeAISettings } from "@/lib/types";
 
 const FIELD_TYPES: GenAISchemaField["type"][] = ["str", "int", "float", "bool", "list[str]"];
 
-const PROVIDER_MODELS: Record<GenerativeAISettings["provider"], string[]> = {
+export const PROVIDER_MODELS: Record<GenerativeAISettings["provider"], string[]> = {
   openai: ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"],
   google: ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"],
   ollama: ["llama3:8b", "mistral", "qwen2.5:7b"],
@@ -74,18 +74,18 @@ export function GenAISection({
         </Field>
 
         <Field label="Model">
-          <Select value={genai.modelName} onValueChange={(v) => onChange({ modelName: v })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PROVIDER_MODELS[genai.provider].map((m) => (
-                <SelectItem key={m} value={m}>
-                  {m}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Input
+            value={genai.modelName}
+            onChange={(e) => onChange({ modelName: e.target.value })}
+            placeholder={PROVIDER_MODELS[genai.provider][0]}
+            list="genai-model-suggestions"
+            className="font-mono text-xs"
+          />
+          <datalist id="genai-model-suggestions">
+            {PROVIDER_MODELS[genai.provider].map((m) => (
+              <option key={m} value={m} />
+            ))}
+          </datalist>
         </Field>
       </FieldRow>
 
@@ -97,6 +97,30 @@ export function GenAISection({
             placeholder="http://localhost:11434/"
           />
         </Field>
+      ) : genai.provider === "openai" ? (
+        <>
+          <Field
+            label="Base URL"
+            description="Leave empty to use OpenAI's API, or point this at any OpenAI-compatible endpoint — llama.cpp, vLLM, LM Studio, OpenRouter, etc."
+          >
+            <Input
+              value={genai.baseUrl ?? ""}
+              onChange={(e) => onChange({ baseUrl: e.target.value })}
+              placeholder="https://your-server.example.com/v1"
+            />
+          </Field>
+          <Field
+            label="API key"
+            description="Required for OpenAI itself; self-hosted servers often ignore this — put any placeholder value if yours doesn't check it. Never hardcode this in source."
+          >
+            <Input
+              type="password"
+              value={genai.apiKey ?? ""}
+              onChange={(e) => onChange({ apiKey: e.target.value })}
+              placeholder="sk-..."
+            />
+          </Field>
+        </>
       ) : (
         <Field label="API key" description="Never hardcode this in source — use an environment variable.">
           <Input

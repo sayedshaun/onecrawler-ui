@@ -9,15 +9,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/providers/theme-provider";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme">
-          <Sun className="scale-100 dark:scale-0 transition-transform absolute" />
-          <Moon className="scale-0 dark:scale-100 transition-transform" />
+        <Button variant="ghost" size="icon" aria-label="Toggle theme" className={className}>
+          <Sun className="scale-100 dark:scale-0 transition-transform duration-300 ease-out absolute" />
+          <Moon className="scale-0 dark:scale-100 transition-transform duration-300 ease-out" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

@@ -57,7 +57,7 @@ export function DiscoveredUrlsList({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="ml-auto h-6 w-6 shrink-0 text-muted-foreground opacity-100 transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                className="ml-auto h-8 w-8 shrink-0 text-muted-foreground opacity-100 transition-opacity duration-150 ease-out hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                 disabled={deleting}
                 onClick={() => onDelete(item.id)}
                 aria-label="Delete discovered URL"
