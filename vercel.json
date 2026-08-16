@@ -3,10 +3,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://yokelish-aperiodically-drucilla.ngrok-free.dev/api/$1"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
