@@ -143,12 +143,7 @@ function PublicNav() {
 function HeroPreviewCard() {
   return (
     <div className="border border-border bg-card relative rounded-2xl p-4">
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
-          <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
-          <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
-        </div>
+      <div className="flex items-center justify-end border-b border-border pb-3">
         <Badge variant="success" className="gap-1.5">
           <LiveDot className="bg-success" />
           Running
@@ -353,16 +348,11 @@ function AgentShowcase() {
           className="border border-border bg-card mx-auto mt-12 max-w-5xl rounded-2xl p-2 sm:p-3"
         >
           <div className="flex items-center gap-2 px-2 py-2">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
-            </div>
-            <div className="mx-auto hidden items-center gap-1.5 rounded-md bg-muted/60 px-3 py-1 text-xs text-muted-foreground sm:flex">
+            <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
               <Bot className="h-3 w-3" />
               Agent
             </div>
-            <Badge variant="success" className="gap-1.5">
+            <Badge variant="success" className="ml-auto gap-1.5">
               <LiveDot className="bg-success" />
               Running
             </Badge>
@@ -588,16 +578,11 @@ function LiveDashboardShowcase() {
         <div className="border border-border bg-card mx-auto mt-12 max-w-5xl rounded-2xl p-2 sm:p-3">
           {/* Window chrome */}
           <div className="flex items-center gap-2 px-2 py-2">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
-            </div>
-            <div className="mx-auto hidden items-center gap-1.5 rounded-md bg-muted/60 px-3 py-1 text-xs text-muted-foreground sm:flex">
+            <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
               <Radar className="h-3 w-3" />
               Dashboard
             </div>
-            <Badge variant="success" className="gap-1.5">
+            <Badge variant="success" className="ml-auto gap-1.5">
               <LiveDot className="bg-success" />
               Running
             </Badge>
