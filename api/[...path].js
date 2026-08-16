@@ -11,7 +11,9 @@
 // elsewhere (e.g. an ngrok tunnel to a local machine). Runs on the Edge
 // runtime (not Node serverless) so both the request and response bodies can
 // stream through — required for POST /api/v1/chat/stream's SSE tokens.
-export const config = { runtime: "edge" };
+export const config = {
+  runtime: "edge",
+};
 
 export default async function handler(req) {
   const backendBase = process.env.BACKEND_URL;
