@@ -1,13 +1,20 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import {
   Activity,
   ArrowRight,
+  Bot,
   Check,
   CheckCircle2,
   Compass,
   FileJson,
+  Filter,
   Gauge,
   Layers,
+  LayoutTemplate,
+  ListChecks,
+  Loader2,
   MousePointerClick,
   Radar,
   ShieldCheck,
@@ -32,6 +39,11 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 const FEATURES = [
   {
+    icon: Bot,
+    title: "AI agent that crawls for you",
+    description: "Describe what you want in plain English — the agent plans the crawl, runs it, and reports back.",
+  },
+  {
     icon: Compass,
     title: "Sitemap & link discovery",
     description: "Point OneCrawler at a domain and let it map sitemaps or follow links to find every page worth scraping.",
@@ -47,9 +59,19 @@ const FEATURES = [
     description: "Extract with fast heuristics, or hand a page to an LLM with a structured output schema.",
   },
   {
+    icon: Filter,
+    title: "Composable content filters",
+    description: "Chain by-date, by-keyword, by-extension, and by-similarity filters with AND/OR logic to scrape exactly what matters.",
+  },
+  {
+    icon: LayoutTemplate,
+    title: "Reusable crawl templates",
+    description: "Save a crawl setup once — extraction, filters, proxies, browser behavior — and launch new crawls from it instantly.",
+  },
+  {
     icon: FileJson,
-    title: "Markdown, JSON, XML, or TEI",
-    description: "Get results in the format your pipeline already expects — no post-processing required.",
+    title: "Browse, filter, and export results",
+    description: "Search across every scraped item and export as Markdown, JSON, XML, or TEI — no post-processing required.",
   },
   {
     icon: ShieldCheck,
@@ -93,6 +115,9 @@ function PublicNav() {
         </Link>
 
         <nav className="ml-6 hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
+          <a href="#agent" className="transition-colors duration-150 ease-out hover:text-foreground">
+            Agent
+          </a>
           <a href="#features" className="transition-colors duration-150 ease-out hover:text-foreground">
             Features
           </a>
@@ -155,6 +180,363 @@ function HeroPreviewCard() {
         </p>
       </div>
     </div>
+  );
+}
+
+const AGENT_PROMPTS = [
+  "Extract structured data",
+  "Map an entire site",
+  "Scrape & summarize",
+  "Check a crawl",
+];
+
+const USER_PROMPT_1 = "Crawl example.com's blog and extract titles + publish dates";
+const USER_PROMPT_2 = "How's it going so far?";
+
+const TRACE_STEPS = [
+  { icon: ListChecks, iconClassName: "text-violet-500", label: "Updated the plan" },
+  { icon: CheckCircle2, iconClassName: "text-success", label: "Crawl started" },
+  { icon: CheckCircle2, iconClassName: "text-success", label: "Checked crawl status" },
+];
+
+const REPLY_1_WORDS =
+  "Started the crawl — I'll pull each post's title and publish date and let you know when it's done."
+    .split(" ");
+
+const REPLY_2_WORDS =
+  "42 pages discovered, 18 scraped so far — right on track, no errors yet.".split(" ");
+
+// Order of the looping demo. Each stage implies everything before it is also visible.
+const STAGE_ORDER = [
+  "user",
+  "trace-0",
+  "trace-1",
+  "trace-extracting",
+  "trace-2",
+  "typing",
+  "streaming",
+  "user2",
+  "trace2-checking",
+  "trace2-checked",
+  "typing2",
+  "streaming2",
+  "chips",
+] as const;
+
+const WORD_INTERVAL_MS = 90;
+const HOLD_MS = 3000;
+
+function TraceLine({ step }: { step: (typeof TRACE_STEPS)[number] }) {
+  const Icon = step.icon;
+  return (
+    <p className="flex items-center gap-1.5">
+      <Icon className={`h-3 w-3 ${step.iconClassName}`} />
+      {step.label}
+    </p>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-muted px-4 py-3">
+      {[0, 150, 300].map((delay) => (
+        <span
+          key={delay}
+          className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60"
+          style={{ animationDelay: `${delay}ms` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function useAgentDemo() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(containerRef, { once: false, margin: "-100px" });
+  const reducedMotion = useReducedMotion();
+
+  const [stage, setStage] = useState<(typeof STAGE_ORDER)[number]>("user");
+  const [word1Count, setWord1Count] = useState(0);
+  const [word2Count, setWord2Count] = useState(0);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setStage("chips");
+      setWord1Count(REPLY_1_WORDS.length);
+      setWord2Count(REPLY_2_WORDS.length);
+      return;
+    }
+    if (!inView) return;
+
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const after = (ms: number, fn: () => void) => {
+      timeouts.push(setTimeout(() => !cancelled && fn(), ms));
+    };
+
+    function runCycle() {
+      setStage("user");
+      setWord1Count(0);
+      setWord2Count(0);
+
+      after(700, () => setStage("trace-0"));
+      after(1400, () => setStage("trace-1"));
+      after(2100, () => setStage("trace-extracting"));
+      after(3100, () => setStage("trace-2"));
+      after(3500, () => setStage("typing"));
+      after(4100, () => setStage("streaming"));
+
+      REPLY_1_WORDS.forEach((_, i) => {
+        after(4100 + i * WORD_INTERVAL_MS, () => setWord1Count(i + 1));
+      });
+
+      const streamEnd1 = 4100 + REPLY_1_WORDS.length * WORD_INTERVAL_MS;
+
+      const user2At = streamEnd1 + 900;
+      const checking2At = user2At + 600;
+      const checked2At = checking2At + 900;
+      const typing2At = checked2At + 400;
+      const streaming2At = typing2At + 500;
+
+      after(user2At, () => setStage("user2"));
+      after(checking2At, () => setStage("trace2-checking"));
+      after(checked2At, () => setStage("trace2-checked"));
+      after(typing2At, () => setStage("typing2"));
+      after(streaming2At, () => setStage("streaming2"));
+
+      REPLY_2_WORDS.forEach((_, i) => {
+        after(streaming2At + i * WORD_INTERVAL_MS, () => setWord2Count(i + 1));
+      });
+
+      const streamEnd2 = streaming2At + REPLY_2_WORDS.length * WORD_INTERVAL_MS;
+      after(streamEnd2 + 300, () => setStage("chips"));
+      after(streamEnd2 + 300 + HOLD_MS, runCycle);
+    }
+
+    runCycle();
+
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [inView, reducedMotion]);
+
+  const atLeast = (target: (typeof STAGE_ORDER)[number]) =>
+    STAGE_ORDER.indexOf(stage) >= STAGE_ORDER.indexOf(target);
+
+  return { containerRef, stage, word1Count, word2Count, atLeast };
+}
+
+function AgentShowcase() {
+  const { containerRef, stage, word1Count, word2Count, atLeast } = useAgentDemo();
+
+  return (
+    <section id="agent" className="border-t border-border/60 bg-muted/30 py-20">
+      <div className="mx-auto w-full max-w-7xl px-4 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <Badge variant="outline" className="gap-1.5">
+            <Bot className="h-3 w-3" />
+            AI agent
+          </Badge>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+            Just tell it what you want
+          </h2>
+          <p className="mt-3 text-muted-foreground">
+            No config forms to fill out. Describe a site and what to pull from it in plain English —
+            the agent plans the crawl, runs it, and reports back.
+          </p>
+        </div>
+
+        {/* App-window mock of the agent chat */}
+        <div
+          ref={containerRef}
+          className="border border-border bg-card mx-auto mt-12 max-w-5xl rounded-2xl p-2 sm:p-3"
+        >
+          <div className="flex items-center gap-2 px-2 py-2">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+              <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
+              <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
+            </div>
+            <div className="mx-auto hidden items-center gap-1.5 rounded-md bg-muted/60 px-3 py-1 text-xs text-muted-foreground sm:flex">
+              <Bot className="h-3 w-3" />
+              Agent
+            </div>
+            <Badge variant="success" className="gap-1.5">
+              <LiveDot className="bg-success" />
+              Running
+            </Badge>
+          </div>
+
+          <div className="min-h-[420px] space-y-4 rounded-xl border border-border/60 bg-background/50 p-3 sm:p-4">
+            <AnimatePresence mode="wait">
+              {atLeast("user") && (
+                <motion.div
+                  key={`user-${stage === "user" ? "a" : "b"}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex justify-end"
+                >
+                  <div className="max-w-md rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+                    {USER_PROMPT_1}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {atLeast("trace-0") && (
+              <div className="flex items-start gap-2.5">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-copper text-primary-foreground"
+                >
+                  <Bot className="h-4 w-4" />
+                </motion.div>
+                <div className="max-w-md flex-1 space-y-2.5">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="border border-border bg-muted/40 space-y-1.5 rounded-xl px-3 py-2.5 font-mono text-[11px] text-muted-foreground"
+                  >
+                    <TraceLine step={TRACE_STEPS[0]} />
+                    {atLeast("trace-1") && <TraceLine step={TRACE_STEPS[1]} />}
+                    {atLeast("trace-extracting") && !atLeast("trace-2") && (
+                      <p className="flex items-center gap-1.5 text-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                        Checking crawl status …
+                      </p>
+                    )}
+                    {atLeast("trace-2") && <TraceLine step={TRACE_STEPS[2]} />}
+                  </motion.div>
+
+                  {stage === "typing" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <TypingDots />
+                    </motion.div>
+                  )}
+
+                  {atLeast("streaming") && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="rounded-2xl rounded-tl-sm bg-muted px-4 py-2.5 text-sm text-foreground"
+                    >
+                      {REPLY_1_WORDS.slice(0, word1Count).join(" ")}
+                      {stage === "streaming" && (
+                        <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-foreground/60 align-middle" />
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {atLeast("user2") && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex justify-end"
+              >
+                <div className="max-w-md rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+                  {USER_PROMPT_2}
+                </div>
+              </motion.div>
+            )}
+
+            {atLeast("trace2-checking") && (
+              <div className="flex items-start gap-2.5">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-copper text-primary-foreground"
+                >
+                  <Bot className="h-4 w-4" />
+                </motion.div>
+                <div className="max-w-md flex-1 space-y-2.5">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="border border-border bg-muted/40 rounded-xl px-3 py-2.5 font-mono text-[11px] text-muted-foreground"
+                  >
+                    {atLeast("trace2-checked") ? (
+                      <TraceLine step={TRACE_STEPS[2]} />
+                    ) : (
+                      <p className="flex items-center gap-1.5 text-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                        Checking crawl status …
+                      </p>
+                    )}
+                  </motion.div>
+
+                  {stage === "typing2" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <TypingDots />
+                    </motion.div>
+                  )}
+
+                  {atLeast("streaming2") && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="rounded-2xl rounded-tl-sm bg-muted px-4 py-2.5 text-sm text-foreground"
+                    >
+                      {REPLY_2_WORDS.slice(0, word2Count).join(" ")}
+                      {stage === "streaming2" && (
+                        <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-foreground/60 align-middle" />
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {atLeast("chips") && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-wrap gap-2 pt-1"
+              >
+                {AGENT_PROMPTS.map((prompt) => (
+                  <span
+                    key={prompt}
+                    className="border border-border bg-card rounded-full px-3 py-1 text-xs text-muted-foreground"
+                  >
+                    {prompt}
+                  </span>
+                ))}
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Button asChild size="lg">
+            <Link to="/signup">
+              Try the agent
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -367,8 +749,8 @@ export default function LandingPage() {
         <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-24">
           <div>
             <Badge variant="outline" className="gap-1.5">
-              <Sparkles className="h-3 w-3" />
-              Now with GenAI-powered extraction
+              <Bot className="h-3 w-3" />
+              New: an AI agent that crawls for you
             </Badge>
 
             <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
@@ -376,8 +758,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-              OneCrawler discovers pages, extracts content with heuristics or an LLM, and hands you clean
-              Markdown, JSON, or XML — with proxy rotation and human-like behavior built in.
+              Describe what you need in plain English and let the agent plan and run the crawl, or
+              configure it yourself — heuristics or an LLM, Markdown, JSON, or XML, proxy rotation and
+              human-like behavior built in.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -405,6 +788,8 @@ export default function LandingPage() {
           <HeroPreviewCard />
         </div>
       </section>
+
+      <AgentShowcase />
 
       <LiveDashboardShowcase />
 
