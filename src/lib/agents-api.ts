@@ -198,14 +198,24 @@ export async function streamAgentChat({
 }
 
 interface AgentSettingsApi {
-  llm: { provider: AgentLLMProvider | null; model: string | null; has_key: boolean };
+  llm: {
+    provider: AgentLLMProvider | null;
+    model: string | null;
+    has_key: boolean;
+    base_url: string | null;
+  };
   search: { provider: string | null; has_key: boolean };
   updated_at: string | null;
 }
 
 function settingsFromApi(raw: AgentSettingsApi): AgentSettings {
   return {
-    llm: { provider: raw.llm.provider, model: raw.llm.model, hasKey: raw.llm.has_key },
+    llm: {
+      provider: raw.llm.provider,
+      model: raw.llm.model,
+      hasKey: raw.llm.has_key,
+      baseUrl: raw.llm.base_url,
+    },
     search: { provider: raw.search.provider, hasKey: raw.search.has_key },
     updatedAt: raw.updated_at,
   };
@@ -215,14 +225,25 @@ export function getAgentSettings(): Promise<AgentSettings> {
   return apiFetch<AgentSettingsApi>(`${AGENTS_API_BASE}/settings/agent`).then(settingsFromApi);
 }
 
+// apiKey and model are optional only for the "openai_compatible" provider,
+// which the backend addresses by baseUrl instead (a self-hosted llama.cpp or
+// vLLM server usually has no key and serves a single model).
 export function setAgentLLMConfig(input: {
   provider: AgentLLMProvider;
   model: string;
-  apiKey: string;
+  apiKey?: string;
+  baseUrl?: string;
 }): Promise<AgentSettings> {
   return apiFetch<AgentSettingsApi>(`${AGENTS_API_BASE}/settings/agent`, {
     method: "PUT",
-    body: JSON.stringify({ llm: { provider: input.provider, model: input.model, api_key: input.apiKey } }),
+    body: JSON.stringify({
+      llm: {
+        provider: input.provider,
+        model: input.model,
+        api_key: input.apiKey || null,
+        base_url: input.baseUrl || null,
+      },
+    }),
   }).then(settingsFromApi);
 }
 

@@ -245,12 +245,16 @@ export type AgentMessageRole = "user" | "assistant";
 // agent config): which LLM provider/model powers the agent, and an optional
 // web-search provider (currently only Tavily) that backs its web_search tool.
 // Only `hasKey` is ever read back — the raw keys are write-only.
-export type AgentLLMProvider = "openai" | "anthropic" | "google" | "openrouter";
+// "openai_compatible" is a self-hosted OpenAI-compatible server (llama.cpp,
+// vLLM, LM Studio, Ollama): it's addressed by `baseUrl` instead of a key, and
+// its model name is optional since it serves whatever it was started with.
+export type AgentLLMProvider = "openai" | "anthropic" | "google" | "openrouter" | "openai_compatible";
 
 export interface AgentLLMConfig {
   provider: AgentLLMProvider | null;
   model: string | null;
   hasKey: boolean;
+  baseUrl: string | null;
 }
 
 export interface AgentSearchConfig {
