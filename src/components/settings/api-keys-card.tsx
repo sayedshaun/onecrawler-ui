@@ -34,6 +34,7 @@ const AGENT_PROVIDERS: { value: AgentLLMProvider; label: string }[] = [
   { value: "anthropic", label: "Anthropic" },
   { value: "google", label: "Google" },
   { value: "openrouter", label: "OpenRouter" },
+  { value: "openai_compatible", label: "OpenAI-compatible (llama.cpp, vLLM)" },
 ];
 
 const AGENT_MODEL_SUGGESTIONS: Record<AgentLLMProvider, string[]> = {
@@ -41,7 +42,29 @@ const AGENT_MODEL_SUGGESTIONS: Record<AgentLLMProvider, string[]> = {
   anthropic: ["claude-sonnet-5", "claude-opus-4-8", "claude-haiku-4-5"],
   google: ["gemini-2.0-flash", "gemini-1.5-pro"],
   openrouter: ["openai/gpt-4o-mini", "anthropic/claude-sonnet-5"],
+  // A self-hosted server serves whatever model it was started with and
+  // ignores the name, so there is nothing useful to suggest.
+  openai_compatible: [],
 };
+
+// The backend — not the browser — is what calls this URL, so it has to be
+// reachable from the server: a public https URL or a tunnel, never a loopback
+// address that only resolves on the user's own machine.
+function validateServerUrl(value: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return "Enter a full URL, e.g. https://llm.example.com/v1";
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return "The server URL must start with http:// or https://";
+  }
+  if (["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(url.hostname)) {
+    return "Use a public URL — the backend calls this server, so localhost won't resolve.";
+  }
+  return null;
+}
 
 function ScraperLLMSection() {
   const { data, error, refetch } = usePolledResource(() => listApiKeys(), { cacheKey: "settings:api-keys" });
@@ -198,6 +221,7 @@ function AgentLLMSection() {
 
   const [provider, setProvider] = useState<AgentLLMProvider>("openai");
   const [model, setModel] = useState(AGENT_MODEL_SUGGESTIONS.openai[0]);
+  const [baseUrl, setBaseUrl] = useState("");
   const [llmKey, setLlmKey] = useState("");
   const [savingLlm, setSavingLlm] = useState(false);
   const [clearingLlm, setClearingLlm] = useState(false);
@@ -208,27 +232,46 @@ function AgentLLMSection() {
   const [clearingSearch, setClearingSearch] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  // Reseed the provider/model fields once the saved settings load in.
+  // Reseed the provider/model/URL fields once the saved settings load in.
   useEffect(() => {
     if (settings?.llm.provider) {
       setProvider(settings.llm.provider);
-      setModel(settings.llm.model || AGENT_MODEL_SUGGESTIONS[settings.llm.provider][0]);
+      setModel(settings.llm.model || AGENT_MODEL_SUGGESTIONS[settings.llm.provider][0] || "");
+      setBaseUrl(settings.llm.baseUrl || "");
     }
   }, [settings]);
 
   function handleProviderChange(next: AgentLLMProvider) {
     setProvider(next);
-    setModel(AGENT_MODEL_SUGGESTIONS[next][0]);
+    setModel(AGENT_MODEL_SUGGESTIONS[next][0] ?? "");
+    setBaseUrl(next === settings?.llm.provider ? settings.llm.baseUrl || "" : "");
   }
 
+  // A self-hosted server is identified by its URL and needs no key; every
+  // hosted provider is the other way round.
+  const isSelfHosted = provider === "openai_compatible";
+  const trimmedBaseUrl = baseUrl.trim();
+  const canSaveLlm = isSelfHosted ? Boolean(trimmedBaseUrl) : Boolean(llmKey.trim());
+  const llmConfigured = Boolean(settings?.llm.hasKey || settings?.llm.baseUrl);
+
   async function handleSaveLlm() {
-    const trimmedModel = model.trim() || AGENT_MODEL_SUGGESTIONS[provider][0];
+    const trimmedModel = model.trim() || AGENT_MODEL_SUGGESTIONS[provider][0] || "";
     const trimmedKey = llmKey.trim();
-    if (!trimmedKey) return;
+    if (!canSaveLlm) return;
+    const urlError = isSelfHosted ? validateServerUrl(trimmedBaseUrl) : null;
+    if (urlError) {
+      setLlmError(urlError);
+      return;
+    }
     setSavingLlm(true);
     setLlmError(null);
     try {
-      await setAgentLLMConfig({ provider, model: trimmedModel, apiKey: trimmedKey });
+      await setAgentLLMConfig({
+        provider,
+        model: trimmedModel,
+        apiKey: trimmedKey || undefined,
+        baseUrl: isSelfHosted ? trimmedBaseUrl : undefined,
+      });
       setLlmKey("");
       refetch();
     } catch (err) {
@@ -307,11 +350,11 @@ function AgentLLMSection() {
             </Select>
           </Field>
 
-          <Field label="Model">
+          <Field label={isSelfHosted ? "Model (optional)" : "Model"}>
             <Input
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder={AGENT_MODEL_SUGGESTIONS[provider][0]}
+              placeholder={isSelfHosted ? "whatever the server serves" : AGENT_MODEL_SUGGESTIONS[provider][0]}
               list="agent-model-suggestions"
               className="font-mono text-xs"
             />
@@ -323,15 +366,35 @@ function AgentLLMSection() {
           </Field>
         </FieldRow>
 
-        <Field label="API key">
+        {isSelfHosted && (
+          <Field
+            label="Server URL"
+            description="Public endpoint of your OpenAI-compatible server — the backend calls it, so it must be reachable from the server, not localhost."
+          >
+            <Input
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="https://llm.example.com/v1"
+              className="font-mono text-xs"
+            />
+          </Field>
+        )}
+
+        <Field label={isSelfHosted ? "API key (optional)" : "API key"}>
           <div className="flex items-center gap-2">
             <Input
               type="password"
               value={llmKey}
               onChange={(e) => setLlmKey(e.target.value)}
-              placeholder={settings?.llm.hasKey ? "Enter a new key to replace the saved one" : "sk-..."}
+              placeholder={
+                isSelfHosted
+                  ? "leave empty if your server needs no key"
+                  : settings?.llm.hasKey
+                    ? "Enter a new key to replace the saved one"
+                    : "sk-..."
+              }
             />
-            <Button variant="outline" size="sm" disabled={savingLlm || !llmKey.trim()} onClick={handleSaveLlm}>
+            <Button variant="outline" size="sm" disabled={savingLlm || !canSaveLlm} onClick={handleSaveLlm}>
               {savingLlm ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
               Save
             </Button>
@@ -340,20 +403,20 @@ function AgentLLMSection() {
 
         <div className="flex items-center justify-between gap-3 pt-1">
           <div className="flex items-center gap-2">
-            {settings?.llm.hasKey ? (
+            {llmConfigured ? (
               <Badge variant="success">
                 <Check className="h-3 w-3" /> Configured
               </Badge>
             ) : (
               <Badge variant="outline">Not configured</Badge>
             )}
-            {settings?.llm.hasKey && settings.updatedAt && (
+            {llmConfigured && settings?.updatedAt && (
               <span className="text-xs text-muted-foreground">
                 {settings.llm.provider} · {formatRelativeTime(new Date(settings.updatedAt))}
               </span>
             )}
           </div>
-          <Button variant="ghost" size="sm" disabled={!settings?.llm.hasKey || clearingLlm} onClick={handleClearLlm}>
+          <Button variant="ghost" size="sm" disabled={!llmConfigured || clearingLlm} onClick={handleClearLlm}>
             {clearingLlm ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
             Clear
           </Button>
